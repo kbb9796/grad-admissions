@@ -2,7 +2,7 @@
 
 The data augmentation algorithm serves two purposes: (1) to simplify an intractable or unwieldy posterior, or (2) better approximate the posterior when we have partially missing data. I demonstrate both purposes below using real examples. But first, I briefly motivate the algorithm (both examples and explanation are adapted from Tanner, 1996).
 
-As explained above, sometimes the analytical form of the posterior $p(\theta | Y)$ might be too complex to compute expectations over, or even sample. Or, we might want to incorporate as much information as possible into the posterior from only partially observed data. In both scenarios, we augment the observed data $Y$ with latent variables $Z$. We take advantage of a tractable augmented posterior $p(\theta | Y, Z)$ to recover $p(\theta | Y)$. Note that if $p(\theta | Y, Z)$ is too complex to work with, we are stuck again. Assuming we can evaluate or sample $p(\theta | Y, Z)$, we can integrate $Z$ out to get $p(\theta | Y)$. We have $$p(\theta | Y) = \int_{Z} p(\theta | Y, Z)p(Z | Y) dZ.$$ We call this the posterior identity. But in order to evaluate the posterior identity and recover $p(\theta | Y)$, we need the form of $p(Z | Y)$. We can write $$p(Z | Y) = \int_{\theta} p(Z | Y, \theta)p(\theta | Y)d\theta.$$ This is the predictive identity. Note that $p(Z | Y)$ depends on $p(\theta | Y)$, and $p(\theta | Y)$ in turn depends on $p(Z | Y)$. Thus, starting at an initial approximation to $p(\theta | Y)$, we can alternate between sampling latent variables $Z$ using the predictive identity, and sampling $\theta$ using the posterior identity. This way, we iteratively improve our approximation to $p(\theta | Y)$. The algorithm works as follows:
+In both scenarios, we augment the observed data $Y$ with latent variables $Z$. We take advantage of a tractable augmented posterior $p(\theta | Y, Z)$ to recover $p(\theta | Y)$. Note that if $p(\theta | Y, Z)$ is too complex to work with, we are stuck again. Assuming we can evaluate or sample $p(\theta | Y, Z)$, we can integrate $Z$ out to get $p(\theta | Y)$. We have $$p(\theta | Y) = \int_{Z} p(\theta | Y, Z)p(Z | Y) dZ.$$ We call this the posterior identity. But in order to evaluate the posterior identity and recover $p(\theta | Y)$, we need the form of $p(Z | Y)$. We can write $$p(Z | Y) = \int_{\theta} p(Z | Y, \theta)p(\theta | Y)d\theta.$$ This is the predictive identity. Note that $p(Z | Y)$ depends on $p(\theta | Y)$, and $p(\theta | Y)$ in turn depends on $p(Z | Y)$. Thus, starting at an initial approximation to $p(\theta | Y)$, we can alternate between sampling latent variables $Z$ using the predictive identity, and sampling $\theta$ using the posterior identity. This way, we iteratively improve our approximation to $p(\theta | Y)$. The algorithm works as follows:
 
 (1) Sample $\theta_{1}^{\ast}$, ..., $\theta_{m}^{\ast}$ from the current approximation to the nonaugmented posterior $p(\theta | Y).$ <br>
 (2) Sample $z_j$ from the conditional predictive distribution $p(Z | \theta_{j}^{\ast}, Y)$ for each $j = 1, ..., m$. <br>
@@ -21,9 +21,8 @@ The conditional predictive distribution for $z_{2}$ is given by $$z_{2} \sim Bin
 
 Thus, at each iteration of the algorithm, we generate $\theta_{1}^{\ast}, ..., \theta_{m}^{\ast}$ from the current approximation to the posterior. Then generate $z_{2}^1, ..., z_{2}^m$ from the conditional predictive distribution using each $\theta_{1}^{\ast}, ..., \theta_{m}^{\ast}$. And we update the posterior distribution accordingly by sampling the beta distribution dependent on each $z_{2}^1, ..., z_{2}^m$. We repeat these two steps--impute, then update--until the algorithm converges. At that point, we have a sample from the desired posterior distribution!
     
-![png](README_files/README_1_1.png)
+![png](data_augmentation_files/README_1_1.png)
     
-
 
 We can see that the sample from the augmented posterior agrees well with the true analytical posterior. We have made use of the fact that we can easily sample a simplified posterior distribution by augmenting the observed data with latent variables. An animated sample from the final augmented posterior and conditional predictive distribution is shown below to emphasize the interdependence between the augmenting and updating steps. The sample for $\theta$ is shown in black, $x_{2}$ in red. 
 
@@ -31,7 +30,7 @@ We can see that the sample from the augmented posterior agrees well with the tru
 
 We can also see that the posterior distribution converges in just a handful of iterations below. Only in the first few iterations does the posterior meaningfully change. 
 
-![png](README_files/README_5_0.png)
+![png](data_augmentation_files/README_5_0.png)
     
 
 ## Better approximating posterior with right-censored data
@@ -44,24 +43,24 @@ As explained previously, the algorithm works iteratively. To recap, at each iter
 
 We demonstrate how data augmentation works for a fixed iteration of the algorithm. Over 5000 imputations, the plot on the left shows the augmented survival times in red, and the known survival times in black. The corresponding regression line sampled from the augmented posterior is shown in red as well. It corresponds to the red dot on the right. 
 
-![theta sampler imputations](imputed_survival_times.gif)
+![theta sampler imputations](data_augmentation_files/imputed_survival_times.gif)
 
-![theta sampler iterations](theta_sampler_iterations.gif)
+![theta sampler iterations](data_augmentation_files/theta_sampler_iterations.gif)
 
 We can see below that the augmented and non-augmented posterior distributions for the y-intercept and the slope are in fact different. The augmented posteriors have increased variance (in both variables), and have substantially different locations. The data augmentation algorithm provides a way to utilize the missing data to our advantage. 
 
-![png](README_files/README_13_0.png)
+![png](data_augmentation_files/README_13_0.png)
     
 We plot the mean regression lines from the augmented and non-augmented posterior distributions below to better visualize the difference in location and spread of the two posteriors. 
     
-![png](README_files/README_15_0.png)
+![png](data_augmentation_files/README_15_0.png)
     
 We sample the augmented and non-augmented marginal posterior distributions below for comparison. The marginals deviate from their respective counterparts slightly but noticeably. 
     
-![png](README_files/README_17_0.png)
+![png](data_augmentation_files/README_17_0.png)
     
-![png](README_files/README_17_1.png)
+![png](data_augmentation_files/README_17_1.png)
 
-![png](README_files/README_17_2.png)
+![png](data_augmentation_files/README_17_2.png)
     
 
