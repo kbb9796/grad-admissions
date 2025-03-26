@@ -1,3 +1,4 @@
 # grad-admissions
-Brief examples of graduate probability work, my undergraduate math projects, statistical methods I find interesting,
-and a short essay explaining [measure theory](measure_theory_essay.pdf) to a layman (my father). 
+Brief examples of graduate probability work and my undergraduate 
+math projects are found in [Kole_Butterer_Supplement.pdf](Kole_Butterer_Supplement.pdf). 
+More statistically-focused work can be found under [`statistical_methods/`](statistical_methods/). 
