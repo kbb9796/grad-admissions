@@ -1,0 +1,212 @@
+\documentclass{article}
+\usepackage{amsmath,amsthm,amssymb, dsfont}
+\usepackage{geometry} % Page layout
+\usepackage{hyperref}
+\usepackage{graphicx}
+\usepackage{geometry}
+\usepackage{enumitem}
+\usepackage{animate}
+\geometry{a4paper, margin=1in} % Adjust margins if needed
+\title{Two Applications of Multiple Imputation}
+\author{Kole Butterer}
+\date{\today}
+
+\begin{document}
+\begin{center}
+    \vspace*{-1cm} % Move the logo up to the top
+    \includegraphics[width=0.2\textwidth]{logo.png} \\[.1cm] % Adjust the size of the logo as needed
+    \vspace*{1cm} % Adjust space between logo and title
+    {\LARGE Two Applications of Multiple Imputation} \\[0.5cm]
+    {\large Kole Butterer} \\[0.5cm]
+    {\large May 4, 2025}
+\end{center}
+\begin{abstract}
+  The multiple imputation (MI) algorithm serves two purposes: (1) to simplify the sampling of an intractable or unwieldy posterior, 
+  or (2) better approximate the posterior when data are partially missing. 
+  In both scenarios, we augment the observed data $Y$ with a latent variable $Z$. 
+  We take advantage of a tractable augmented posterior $p(\theta | Y, Z)$ to recover $p(\theta | Y)$. 
+  We show an example for each purpose of MI. The first example simplifies the posterior
+  of the genetic linkage model. The second example demonstrates how right-censored regression improves
+  with MI in a small sample setting. 
+  The examples are adapted from \textit{Tools for Statistical Inference} (Tanner, 1996). 
+\end{abstract}
+\pagebreak
+\section{Multiple imputation}
+
+In using the multiple imputation method, we augment the observed data $Y$ with a latent variable $Z$. 
+We take advantage of a tractable augmented posterior $p(\theta | Y, Z)$ to recover $p(\theta | Y)$. 
+Specifically, assuming we can analytically evaluate or sample $p(\theta | Y, Z)$, 
+we can integrate $Z$ out yielding $p(\theta | Y)$ i.e.
+\begin{equation}
+    p(\theta | Y) = \int_{Z} p(\theta | Y, Z)p(Z | Y) dZ. \tag{1}
+\end{equation}
+We call (1) the posterior identity. 
+But in order to evaluate the posterior identity, we need the form of $p(Z | Y)$. 
+We can write 
+\begin{equation}
+    p(Z | Y) = \int_{\theta} p(Z | Y, \theta)p(\theta | Y)d\theta. \tag{2}
+\end{equation}
+We call (2) the predictive identity. 
+Note that $p(Z | Y)$ depends on $p(\theta | Y)$, and $p(\theta | Y)$ in turn depends on $p(Z | Y)$. 
+Starting at an initial approximation to $p(\theta | Y)$, 
+we can alternate between sampling latent variables $Z$ using the predictive identity, 
+and sampling $\theta$ using the posterior identity. This way, we iteratively improve our approximation to $p(\theta | Y)$. 
+More precisely, the algorithm works as follows:
+\begin{enumerate}[left=3em, topsep=20pt, itemsep=2pt]
+\item Sample $\theta_{1}^{\ast} ..., \theta_{m}^{\ast}$ from the current approximation to the nonaugmented posterior $p(\theta | Y).$
+\item Sample $z_j$ from the conditional predictive distribution $p(Z | \theta_{j}^{\ast}, Y)$ for each $j = 1, ..., m$.
+\item Update $p(\theta | Y)$ as the mixture of augmented posteriors 
+so that $p(\theta | Y)$ = $\smash{\frac{1}{m} \sum\limits_{j=1}^{m} p(\theta | z_j, Y)}.$ %\vspace{-\baselineskip}
+\item Repeat steps (1)-(3) until the approximation converges to $p(\theta | Y)$. 
+\end{enumerate}
+
+To be clear, each $z_j$ for $j = 1, ..., m$ determines an augmented posterior, 
+from which we generate a corresponding $\theta_{j}^{\ast}$. 
+The approximation to the nonaugmented posterior we wish to recover is the mixture of these augmented posteriors. 
+Meaning, our approximation is represented by $\theta_{1}^{\ast}$, ..., $\theta_{m}^{\ast}$, 
+where each $\theta_{j}^{\ast}$ potentially comes from a different augmented posterior distribution. 
+We demonstrate this process concretely below using the genetic linkage model. 
+
+\subsection{Simplifying genetic linkage posterior}
+Consider the genetic linkage model. 
+Suppose 197 animals are distributed into four categories as follows: $$Y = (y_{1}, y_{2}, y_{3}, y_{4}) = (125, 18, 20, 34)$$ 
+according to cell probabilities 
+$$\left(\frac{1}{2} + \frac{\theta}{4}, \frac{1 - \theta}{4}, \frac{1 - \theta}{4}, \frac{\theta}{4}\right).$$ 
+We want to find the posterior for $\theta.$ 
+Under a flat prior, the posterior distribution is 
+$$p(\theta | Y) \propto (2 + \theta)^{y_{1}}(1 - \theta)^{y_{2} + y_{3}}\theta^{y_4}.$$ 
+Analytically evaluating expectations with respect to $\theta$ here is too complicated, 
+and we have no way to directly sample $\theta$ either. 
+But we can simplify the form of the posterior using data augmentation. 
+
+We augment the observed data $Y$ with latent variable $Z$. 
+We construct $Z$ by spliting the first cell of $Y$ into two cells as follows:
+$$y_{1} = z_{1} + z_{2},  \ y_{2} = z_{3}, \ y_{3} = z_{4}, \ y_{4} = z_{5},$$ 
+and giving $Z$ cell probabilities 
+$$\left(\frac{1}{2}, \frac{\theta}{4}, \frac{1 - \theta}{4}, \frac{1 - \theta}{4}, \frac{\theta}{4}\right).$$ 
+Under a flat prior, the augmented posterior is given by $$p(\theta | Y, Z) \propto \theta^{z_{2} + z_{5}}(1 - \theta)^{z_{3} + z_{4}}.$$ 
+The augmented posterior admits a much simpler form. In fact, the augmented posterior is a beta distribution, 
+which yields tractable expectations and direct sampling! 
+Once we have the form for the conditional predictive distribution, we can employ the data augmentation algorithm. 
+
+The conditional predictive distribution $p(z_2 | Y, \theta)$ for $z_{2}$ is given by 
+$$z_{2} \sim \text{Binom}\left(n = 125, p = \frac{\theta}{\theta + 2}\right).$$ 
+Intuitively, we are flipping a coin to determine where to place the 125 counts originally 
+belonging to $y_1$---each count goes to either $z_1$ or $z_2.$
+The probability of each count being placed in $z_1$ is given by the 
+probability of being placed in $z_1$ divided by the probability of being in $z_1$ or $z_2$ 
+which simplifies to $\frac{\theta}{\theta + 2}$. 
+
+At each iteration of the algorithm, we generate $\theta_{1}^{\ast}, ..., \theta_{m}^{\ast}$ 
+from the current approximation to the posterior. 
+Then we generate $z_{2}^{(1)}, ..., z_{2}^{(m)}$ from the conditional predictive distribution using each 
+$\theta_{1}^{\ast}, ..., \theta_{m}^{\ast}$. 
+And we update the posterior distribution accordingly by sampling the 
+beta distribution dependent on each $z_{2}^{(1)}, ..., z_{2}^{(m)}$. 
+We repeat these two steps---impute, then update---until the algorithm converges. 
+At that point, we have a sample from the desired posterior distribution! In this case, once the algorithm
+has been initialized, it works as follows:
+\begin{enumerate}[left=3em, topsep=20pt, itemsep=2pt]
+  \item Sample $\theta_{1}^{\ast} ..., \theta_{m}^{\ast}$ from the current approximation to the posterior $p(\theta | Y).$
+  \item Draw $\smash{z_2^{(i)} \sim \text{Binom}\left(125, \frac{\theta_{i}^{\ast}}{\theta_{i}^{\ast} + 2}\right)}$ for each $i=1, ..., m.$ 
+  \item Update the approximation to the posterior as the mixture of beta distributions \\
+  i.e. $\smash{p(\theta | Y) = \frac{1}{m} \sum_{i=1}^m \text{Beta}(z_2^{(i)} + z_5 + 1, z_3 + z_4 + 1)}.$
+  \item Repeat steps (1)-(3) until the approximation to the posterior converges.
+\end{enumerate}
+To initialize the algorithm, you might draw each $\theta^{\ast}$ from a uniform distribution over the interval (0, 1).
+To sample from the mixture of beta distributions, randomly select $z_2^{\ast}$ 
+from the imputed values $z_2^{(1)}, ..., z_2^{(m)}$ and then draw from $\text{Beta}(z_2^{\ast} + z_5 + 1, z_3 + z_4 + 1).$
+Letting $$x_1^{(i)} = z_2^{\ast} + z_5 + 1 \ \text{and} \ x_2^{(i)} = z_3 + z_4 + 1,$$ we would draw the $i$th sample of $\theta^{\ast}$ from
+$$\text{Beta}(x_1^{(i)}, x_2^{(i)})(\theta) = 
+\frac{\Gamma(x_1^{(i)} + x_2^{(i)})}{\Gamma(x_1^{(i)})\Gamma(x_2^{(i)})} \theta^{x_1^{(i)} - 1} (1-\theta)^{x_2^{(i)} - 1}.$$
+
+\begin{figure}[!ht]
+    \centering
+    \includegraphics[height=8cm]{theta_sample.png}
+    \caption{(a) Approximating true posterior with sample from mixture of augmented posteriors, 
+    (b) samples from mixture of augmented posteriors (black) and conditional predictive distributions for $z_2$ (red).}
+    \label{fig:figure1}
+  \end{figure}
+    
+We can see in \textbf{Figure 1a} that the sample from the final augmented posterior 
+agrees well with the true analytical, non-augmented posterior. 
+Figure 1b emphasizes the dependence between $\theta_i^{\ast}$ and $z_2^{(i)}.$
+If we were to show the plots in \textbf{Figure 1b} across iterations (not just imputations),
+we would expect the black bands to occupy different regions of the parameter space over each iteration,
+and similarly for the red bands---especially in early iterations.
+\pagebreak
+\subsection{Partially missing data: right-censored regression}
+Moving to the second application of data augmentation, we demonstrate how to better approximate 
+a posterior in cases where we have ``incomplete" data.
+In the following \href{https://www.openintro.org/data/index.php?data=heart_transplant}{data set}, each patient had a heart transplant. The survival times and age at the time of the transplant were recorded. 
+We want to regress log survival time onto age. However, half of the patients survived past the length of the study; 
+we do not know the true value of their survival time. 
+
+At each iteration of the algorithm, we generate our best guess for the values of the missing data using the current 
+approximation to the posterior distribution. 
+Then we regress log survival time onto age using the complete data, and update the approximation to the posterior distribution
+as the mixture of the posteriors conditional on varying samples of augmented data. 
+We repeat these steps---impute, then update---until the posterior approximations converge. 
+In the end, we have a sample from a better approximation to the true posterior.
+Under a flat prior for the regression parameters, the algorithm works as follows once it has been initialized:
+%%% NEED THIS TO BE CONSISTENT WITH THE ORIGINAL DESCRIPTION OF THE ALGORITHM
+%% Explain factoring posterior into separte factors for sigma and the betas
+\begin{enumerate}[left=3em, topsep=20pt, itemsep=2pt]
+  \item Sample the tuple $(\beta^{\ast}_0, \beta^{\ast}_1, \sigma_{\ast}^2)$ from the current approximation to the \\
+  nonaugmented posterior $p(\theta | Y).$
+  \begin{enumerate}[label=\alph*.]
+    \item Sample $\sigma_{\ast}^2 \sim \text{Inverse-Gamma}(\alpha, \gamma)$ for $\alpha=\frac{1}{2}(n-k-1)$ and \\
+    $\gamma = \frac{1}{2}\hat{\sigma}^{2}(n-k)$ where $\hat{\sigma}^{2}$ is the current sample error variance corresponding \\
+    to the current regression line.
+    \item Sample $(\beta^{\ast}_0, \beta_1^{\ast}) \sim \mathcal{N}(\boldsymbol{\hat{\beta}}, \sigma_{\ast}^2 \mathbf{X^T X})$ 
+    where $\boldsymbol{\hat{\beta}} = (\mathbf{X^T X})^{-1} \mathbf{X^T y}$ i.e. the least squares solution to the regression problem.
+  \end{enumerate}
+  \item Sample $z$ from the conditional predictive distribution $p(z | \beta^{\ast}_0, \beta_1^{\ast}, \sigma_{\ast}^2, Y, X)$ \\
+  i.e. sample $z \sim \mathcal{N}(\mathbf{X}^{\text{(unknown)}}\mathbf{\beta^{\ast}}, \sigma_{\ast}^2 \mathbf{I})$ 
+  such that each imputed survival time is larger than the time of recording.
+  \item Repeat steps (1) and (2) $m$ times yielding $z_1, ..., z_m.$ 
+  \item Update the approximation to the posterior as the mixture of augmented posteriors \\ i.e. 
+  $\smash{p(\beta^{\ast}_0, \beta^{\ast}_1, \sigma_{\ast}^2 | Y, X) = \frac{1}{m} \sum_{i=1}^{m} 
+  p(\beta^{\ast}_0, \beta^{\ast}_1, \sigma_{\ast}^2 | z_j, Y, X).}$ 
+\end{enumerate}
+
+\begin{figure}[h!]
+    \centering
+    \scalebox{.4}{
+      \animategraphics[autoplay, loop]{.5}{imputed_survival_times-}{0}{9}
+    }
+    \caption{(a) Augmented and known survival times with augmented regression line, 
+    (b) sampled regression line from mixture of joint augmented posteriors.}
+    \label{fig:figure2}
+  \end{figure}
+
+We animate how multiple imputation works over 10 imputations during one iteration of the algorithm in \textbf{Figure 2}. 
+\textbf{Figure 2a} shows the augmented survival times in red, and the known survival times in black, as well as the regression line
+sampled from the mixture of joint augmented posteriors (for one fixed iteration) on the right. The regression line is also represented
+by the red dot on the mixture of joint augmented posteriors in Figure 2b. 
+\begin{figure}[h!]
+  \centering
+  \includegraphics[height=6cm]{joint_comparison.png}
+  \caption{Comparing final mixture of augmented posteriors to initial, non-augmented posterior.}
+  \label{fig:figure3}
+\end{figure}
+
+In \textbf{Figure 3}, we compare the final mixture of augmented posteriors to the initial, 
+non-augmented posterior distribution for the regression
+parameters using only the known survival times. 
+
+\begin{figure}[h!]
+  \centering
+  \includegraphics[height=8cm]{marginal_comparisons.png}
+  \caption{Comparing augmented and non-augmented marginals.}
+  \label{fig:figure4}
+\end{figure}
+
+In \textbf{Figure 4}, we compare the marginal augmented and non-augmented posteriors for each of the regression parameters.
+
+\subsection{Conclusion}
+We can use the data augmentation to make intractable posteriors tractable, and better estimate posterior distributions
+when data is partially missing. The augmented and non-augmented posteriors can be quite different in the case of censored
+regression data. 
+
+\end{document}
